@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Railway Map with OpenStreetMap</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet/dist/leaflet.css"
+  />
+  <style>
+    html, body, #map { height: 100%; margin: 0; padding: 0; }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+  <div id="legend" style="position: absolute; bottom: 30px; left: 10px; background: white; padding: 10px; border-radius: 6px; box-shadow: 0 0 6px #888; font-size: 14px; z-index: 1000;"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="coordinates.js"></script>
+
+<script>
+  const map = L.map('map').setView([50.280742, 9.372053], 13);
+
+  // Black & White base layer
+  const bw = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors & CartoDB'
+  }).addTo(map);
+
+  // OpenRailwayMap overlay
+  const railwayLayer = L.tileLayer(
+    'https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png',
+    {
+      maxZoom: 19,
+      subdomains: "abc",
+      attribution: '&copy; <a href="https://openrailwaymap.org">OpenRailwayMap</a> & OpenStreetMap contributors',
+      opacity: 0.7,
+    }
+  );
+
+  // Layer groups for markers
+  const classicMarkers = L.layerGroup();
+  const coloredMarkers = L.layerGroup();
+  const bhfPaarLayer = L.layerGroup();
+
+if (typeof coordinates !== "undefined" && Array.isArray(coordinates)) {
+  coordinates.forEach(coord => {
+    // Classic marker
+    L.marker([coord.latitude, coord.longitude])
+      .bindPopup(`<b>${coord.bahnhof}</b><br>
+                ID: ${coord.id}<br>
+                Zeitbedarf: ${coord.zeit__bedarf} min<br>
+                Distanz in km: ${coord.distanz_in_km}<br>
+                Punkte Bahnhof: ${coord.punkte_bahnhof}<br>
+                Punkte Aufgabe: ${coord.punkte_aufgabe}<br>
+                Lostopf: ${coord.lostopf}`)
+      .addTo(classicMarkers);
+
+    // Colored circle marker
+    const color = (typeof lostopfColors !== "undefined" && lostopfColors[coord.lostopf]) ? lostopfColors[coord.lostopf] : (lostopfColors ? lostopfColors["default"] : "#3388ff");
+    L.circleMarker([coord.latitude, coord.longitude], {
+      radius: 8,
+      color: color,
+      fillColor: color,
+      fillOpacity: 1,
+      weight: 2
+    })
+    .bindPopup(`<b>${coord.bahnhof}</b><br>
+                ID: ${coord.id}<br>
+                Zeitbedarf: ${coord.zeit__bedarf} min<br>
+                Distanz in km: ${coord.distanz_in_km}<br>
+                Punkte Bahnhof: ${coord.punkte_bahnhof}<br>
+                Punkte Aufgabe: ${coord.punkte_aufgabe}<br>
+                Lostopf: ${coord.lostopf}`)
+    .addTo(coloredMarkers);
+
+    // Bhf-Paar marker
+    if (coord.lostopf === "Bhf-Paare") {
+      L.marker([coord.latitude, coord.longitude])
+        .bindPopup(`<b>${coord.bahnhof}</b><br>
+                  ID: ${coord.id}<br>
+                  Zeitbedarf: ${coord.zeit__bedarf} min<br>
+                  Distanz in km: ${coord.distanz_in_km}<br>
+                  Punkte Bahnhof: ${coord.punkte_bahnhof}<br>
+                  Punkte Aufgabe: ${coord.punkte_aufgabe}<br>
+                  Lostopf: ${coord.lostopf}`)
+        .addTo(bhfPaarLayer);
+    }
+  });
+}
+
+// Add Bhf-Paar lines to the same layer group
+if (typeof bhfPaarLines !== "undefined" && Array.isArray(bhfPaarLines)) {
+  bhfPaarLines.forEach(lineCoords => {
+    L.polyline(lineCoords, {
+      color: "purple",
+      weight: 4,
+      opacity: 0.7,
+      dashArray: "6, 6"
+    }).addTo(bhfPaarLayer);
+  });
+}
+
+  // Add classic markers by default
+  classicMarkers.addTo(map);
+
+  // Legend for Lostopf colors
+  function createLegend() {
+    if (typeof lostopfColors === "undefined") return;
+    let legendHtml = "<b>Lostopf</b><br>";
+    Object.keys(lostopfColors).forEach(key => {
+      if (key !== "default") {
+        legendHtml += `<span style="display:inline-block;width:16px;height:16px;background:${lostopfColors[key]};margin-right:6px;border-radius:50%;border:1px solid #888"></span>${key}<br>`;
+      }
+    });
+    document.getElementById("legend").innerHTML = legendHtml;
+  }
+  createLegend();
+
+  // Layer control
+  L.control.layers(
+    {
+      'Black & White': bw,
+    },
+    {
+      'Railway Tracks': railwayLayer,
+      'Classic Markers': classicMarkers,
+      'Colored Markers': coloredMarkers,
+      'Bhf-Paar Lines': bhfPaarLayer
+    }
+  ).addTo(map);
+</script>
+</body>
+</html>
