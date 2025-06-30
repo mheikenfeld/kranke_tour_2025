@@ -60,7 +60,7 @@ if (typeof coordinates !== "undefined" && Array.isArray(coordinates)) {
     // Colored circle marker
     const color = (typeof lostopfColors !== "undefined" && lostopfColors[coord.lostopf]) ? lostopfColors[coord.lostopf] : (lostopfColors ? lostopfColors["default"] : "#3388ff");
     L.circleMarker([coord.latitude, coord.longitude], {
-      radius: Math.min(1, coord.punkte_aufgabe/22.5),
+      radius: Math.max(3, parseInt(coord.punkte_aufgabe, 10) / 2),
       color: color,
       fillColor: color,
       fillOpacity: 1,
