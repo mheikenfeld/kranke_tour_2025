@@ -2,6 +2,7 @@
 import pandas as pd
 from pathlib import Path
 import matplotlib.pyplot as plt
+import math
 
 
 excel_path = Path(
@@ -45,18 +46,30 @@ meta_cols = [
     "Punkte Aufgabe",
     "Lostopf",
 ]  # Add your meta columns here
+
+
+def js_safe(val):
+    try:
+        if pd.isna(val):
+            return "null"
+        return f"{float(val):.6f}"
+    except Exception:
+        return "null"
+
+
 js_array = "const coordinates = [\n"
 for _, row in df.iterrows():
+    meta_str = ", ".join(
+        [
+            f'{col.lower().replace(" ", "_").replace("-", "_").replace("(", "").replace(")", "")}: "{row[col]}"'
+            for col in meta_cols
+        ]
+    )
     js_array += (
         "  { "
-        f"latitude: {row[lat_col]}, longitude: {row[lon_col]}, "
-        + f"latitude2: {row[lat2_col]}, longitude2: {row[lon2_col]}, "
-        + ", ".join(
-            [
-                f'{col.lower().replace(" ", "_").replace("-", "_").replace("(", "").replace(")", "")}: "{row[col]}"'
-                for col in meta_cols
-            ]
-        )
+        f"latitude: {js_safe(row[lat_col])}, longitude: {js_safe(row[lon_col])}, "
+        + (meta_str + ", " if meta_str else "")
+        + f"latitude2: {js_safe(row[lat2_col])}, longitude2: {js_safe(row[lon2_col])}"
         + " },\n"
     )
 js_array += "];\n"
