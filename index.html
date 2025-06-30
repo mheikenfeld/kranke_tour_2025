@@ -20,7 +20,7 @@
   <script src="coordinates.js"></script>
 
 <script>
-  const map = L.map('map').setView([50.280742, 9.372053], 13);
+  const map = L.map('map').setView([50.280742, 9.372053], 10);
 
   // Black & White base layer
   const bw = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -36,14 +36,13 @@
       subdomains: "abc",
       attribution: '&copy; <a href="https://openrailwaymap.org">OpenRailwayMap</a> & OpenStreetMap contributors',
       opacity: 0.7,
-  });
+    }
+  );
 
   // Layer groups for markers
   const classicMarkers = L.layerGroup();
   const coloredMarkers = L.layerGroup();
   const bhfPaarLayer = L.layerGroup();
-  const secondaryMarkers = [];
-  const dottedLines = [];
 
 if (typeof coordinates !== "undefined" && Array.isArray(coordinates)) {
   coordinates.forEach(coord => {
@@ -58,10 +57,10 @@ if (typeof coordinates !== "undefined" && Array.isArray(coordinates)) {
                 Lostopf: ${coord.lostopf}`)
       .addTo(classicMarkers);
 
-    // Colored circle marker (primary)
+    // Colored circle marker
     const color = (typeof lostopfColors !== "undefined" && lostopfColors[coord.lostopf]) ? lostopfColors[coord.lostopf] : (lostopfColors ? lostopfColors["default"] : "#3388ff");
     L.circleMarker([coord.latitude, coord.longitude], {
-      radius: Math.max(2, parseInt(coord.punkte_aufgabe, 10) / 18),
+      radius: Math.max(2, parseInt(coord.punkte_aufgabe, 10) / 15),
       color: color,
       fillColor: color,
       fillOpacity: 1,
@@ -75,39 +74,6 @@ if (typeof coordinates !== "undefined" && Array.isArray(coordinates)) {
                 Punkte Aufgabe: ${coord.punkte_aufgabe}<br>
                 Lostopf: ${coord.lostopf}`)
     .addTo(coloredMarkers);
-
-    // If secondary coordinates exist, add secondary marker and line
-    if (coord.latitude2 && coord.longitude2) {
-      const secondaryMarker = L.circleMarker([coord.latitude2, coord.longitude2], {
-        radius: Math.max(2, parseInt(coord.punkte_aufgabe, 10) / 18),
-        color: color,
-        fillColor: color,
-        fillOpacity: 1,
-        weight: 2
-      })
-      .bindPopup(`<b>${coord.bahnhof} (2)</b><br>
-                ID: ${coord.id}<br>
-                Zeitbedarf: ${coord.zeit__bedarf} min<br>
-                Distanz in km: ${coord.distanz_in_km}<br>
-                Punkte Bahnhof: ${coord.punkte_bahnhof}<br>
-                Punkte Aufgabe: ${coord.punkte_aufgabe}<br>
-                Lostopf: ${coord.lostopf}`);
-      secondaryMarkers.push(secondaryMarker);
-
-      const dottedLine = L.polyline(
-        [
-          [coord.latitude, coord.longitude],
-          [coord.latitude2, coord.longitude2]
-        ],
-        {
-          color: color,
-          weight: 2,
-          opacity: 0.7,
-          dashArray: "4, 8"
-        }
-      );
-      dottedLines.push(dottedLine);
-    }
 
     // Bhf-Paar marker
     if (coord.lostopf === "Bhf-Paare") {
@@ -124,30 +90,17 @@ if (typeof coordinates !== "undefined" && Array.isArray(coordinates)) {
   });
 }
 
-// Function to show/hide secondary markers and lines based on zoom
-function updateSecondaryVisibility() {
-  if (map.getZoom() <= 12) {
-    secondaryMarkers.forEach(m => { if (!map.hasLayer(m)) m.addTo(coloredMarkers); });
-    dottedLines.forEach(l => { if (!map.hasLayer(l)) l.addTo(coloredMarkers); });
-  } else {
-    secondaryMarkers.forEach(m => { if (map.hasLayer(m)) map.removeLayer(m); });
-    dottedLines.forEach(l => { if (map.hasLayer(l)) map.removeLayer(l); });
-  }
+// Add Bhf-Paar lines to the same layer group
+if (typeof bhfPaarLines !== "undefined" && Array.isArray(bhfPaarLines)) {
+  bhfPaarLines.forEach(lineCoords => {
+    L.polyline(lineCoords, {
+      color: "purple",
+      weight: 4,
+      opacity: 0.7,
+      dashArray: "6, 6"
+    }).addTo(bhfPaarLayer);
+  });
 }
-map.on('zoomend', updateSecondaryVisibility);
-updateSecondaryVisibility();
-
-  // Add Bhf-Paar lines to the same layer group
-  if (typeof bhfPaarLines !== "undefined" && Array.isArray(bhfPaarLines)) {
-    bhfPaarLines.forEach(lineCoords => {
-      L.polyline(lineCoords, {
-        color: "purple",
-        weight: 4,
-        opacity: 0.7,
-        dashArray: "6, 6"
-      }).addTo(bhfPaarLayer);
-    });
-  }
 
   // Add classic markers by default
   classicMarkers.addTo(map);
