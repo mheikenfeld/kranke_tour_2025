@@ -14,7 +14,6 @@ output_dir = excel_path.parent
 
 
 # %%
-
 unique_lostopf = df["Lostopf"].dropna().unique()
 colors = plt.cm.get_cmap(
     "tab20", len(unique_lostopf)
@@ -33,6 +32,10 @@ js_color_map = (
 # Assume the columns are named or ordered like this:
 lat_col = "Breitengrad Bahnhof"
 lon_col = "Längengrad Bahnhof"
+
+lat2_col = "Breitengrad Aufgabe"
+lon2_col = "Längengrad Aufgabe"
+
 meta_cols = [
     "ID",
     "Bahnhof",
@@ -47,6 +50,7 @@ for _, row in df.iterrows():
     js_array += (
         "  { "
         f"latitude: {row[lat_col]}, longitude: {row[lon_col]}, "
+        + f"latitude2: {row[lat2_col]}, longitude2: {row[lon2_col]}, "
         + ", ".join(
             [
                 f'{col.lower().replace(" ", "_").replace("-", "_").replace("(", "").replace(")", "")}: "{row[col]}"'
